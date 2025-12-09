@@ -78,15 +78,23 @@ export default function DashboardPage() {
                 </span>
               </p>
             </div>
-            <button
-              onClick={() => {
-                logout();
-                router.push("/login");
-              }}
-              className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-lg font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 hover:scale-105"
-            >
-              Logout
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => router.push("/roles")}
+                className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-lg font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 hover:scale-105"
+              >
+                Manage Roles
+              </button>
+              <button
+                onClick={() => {
+                  logout();
+                  router.push("/login");
+                }}
+                className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-lg font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 hover:scale-105"
+              >
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       </div>

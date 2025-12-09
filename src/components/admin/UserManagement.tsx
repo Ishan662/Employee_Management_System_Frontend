@@ -163,6 +163,40 @@ export function UserManagement({ title, roleFilter }: UserManagementProps) {
     setUsers((prev) => prev.filter((u) => u.id !== id));
   };
 
+  const handleToggleActive = async (user: AdminUser) => {
+    const id = getUserId(user);
+    if (!id) {
+      alert("Cannot update this user because it has no valid id field.");
+      return;
+    }
+    const newStatus = !user.isActive;
+    try {
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("accessToken")
+          : null;
+      const res = await fetch(`/api/users/${id}/active`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ isActive: newStatus }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || "Failed to update user status");
+        return;
+      }
+      const updated = (await res.json()) as AdminUser;
+      setUsers((prev) =>
+        prev.map((u) => (getUserId(u) === id ? updated : u)),
+      );
+    } catch (error) {
+      alert("Failed to update user status");
+    }
+  };
+
   const startEdit = (user: AdminUser) => {
     setEditingUser(user);
     setEditForm({
@@ -287,53 +321,80 @@ export function UserManagement({ title, roleFilter }: UserManagementProps) {
         </div>
       )}
 
-      {/* Edit Form - Modal/Inline */}
+      {/* Edit Form - Modal */}
       {editingUser && (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            Edit User
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              className="border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="Email"
-              value={editForm.email}
-              onChange={(e) =>
-                setEditForm({ ...editForm, email: e.target.value })
-              }
-            />
-            <input
-              className="border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="First name"
-              value={editForm.firstName}
-              onChange={(e) =>
-                setEditForm({ ...editForm, firstName: e.target.value })
-              }
-            />
-            <input
-              className="border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all md:col-span-2"
-              placeholder="Last name (optional)"
-              value={editForm.lastName ?? ""}
-              onChange={(e) =>
-                setEditForm({ ...editForm, lastName: e.target.value })
-              }
-            />
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button
-              onClick={handleUpdate}
-              disabled={updating}
-              className="px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-medium disabled:opacity-50 hover:shadow-lg transition-all duration-200 hover:scale-105"
-            >
-              {updating ? "Saving..." : "Save Changes"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditingUser(null)}
-              className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all"
-            >
-              Cancel
-            </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden animate-in zoom-in duration-200">
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                Edit User
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingUser(null)}
+                className="text-white/80 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    placeholder="Email address"
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, email: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                  <input
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    placeholder="First name"
+                    value={editForm.firstName}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, firstName: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name (Optional)</label>
+                  <input
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    placeholder="Last name"
+                    value={editForm.lastName ?? ""}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, lastName: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleUpdate}
+                  disabled={updating}
+                  className="flex-1 px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-medium disabled:opacity-50 hover:shadow-lg transition-all duration-200"
+                >
+                  {updating ? "Saving..." : "Save Changes"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="flex-1 px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -356,55 +417,122 @@ export function UserManagement({ title, roleFilter }: UserManagementProps) {
               <p className="text-gray-500">No {title.toLowerCase()} found.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 pr-4 text-sm font-semibold text-gray-700">Email</th>
-                    <th className="text-left py-3 pr-4 text-sm font-semibold text-gray-700">Name</th>
-                    <th className="text-left py-3 pr-4 text-sm font-semibold text-gray-700">Role</th>
-                    <th className="text-left py-3 pr-4 text-sm font-semibold text-gray-700">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleUsers.map((u) => (
-                    <tr key={u.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td className="py-3 pr-4 text-sm text-gray-700">{u.email}</td>
-                      <td className="py-3 pr-4 text-sm text-gray-700">
-                        {u.firstName} {u.lastName ?? ""}
-                      </td>
-                      <td className="py-3 pr-4">
-                        <span className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                          {getRoleName(u)}
-                        </span>
-                      </td>
-                      <td className="py-3 pr-4">
-                        <div className="flex gap-2">
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 pr-4 text-sm font-semibold text-gray-700">Email</th>
+                      <th className="text-left py-3 pr-4 text-sm font-semibold text-gray-700">Name</th>
+                      <th className="text-left py-3 pr-4 text-sm font-semibold text-gray-700">Role</th>
+                      <th className="text-left py-3 pr-4 text-sm font-semibold text-gray-700">Status</th>
+                      <th className="text-left py-3 pr-4 text-sm font-semibold text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleUsers.map((u) => (
+                      <tr key={u.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <td className="py-3 pr-4 text-sm text-gray-700">{u.email}</td>
+                        <td className="py-3 pr-4 text-sm text-gray-700">
+                          {u.firstName} {u.lastName ?? ""}
+                        </td>
+                        <td className="py-3 pr-4">
+                          <span className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                            {getRoleName(u)}
+                          </span>
+                        </td>
+                        <td className="py-3 pr-4">
                           <button
-                            onClick={() => setViewUser(u)}
-                            className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium transition-all"
+                            onClick={() => handleToggleActive(u)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                              u.isActive
+                                ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            }`}
                           >
-                            View
+                            {u.isActive ? "Active" : "Inactive"}
                           </button>
+                        </td>
+                        <td className="py-3 pr-4">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setViewUser(u)}
+                              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium transition-all"
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={() => startEdit(u)}
+                              className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-xs font-medium transition-all"
+                            >
+                              Update
+                            </button>
+                            <button
+                              onClick={() => handleDelete(u)}
+                              className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-medium transition-all"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {visibleUsers.map((u) => (
+                  <div key={u.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                            {getRoleName(u)}
+                          </span>
                           <button
-                            onClick={() => startEdit(u)}
-                            className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-xs font-medium transition-all"
+                            onClick={() => handleToggleActive(u)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                              u.isActive
+                                ? "bg-green-100 text-green-700"
+                                : "bg-gray-200 text-gray-700"
+                            }`}
                           >
-                            Update
-                          </button>
-                          <button
-                            onClick={() => handleDelete(u)}
-                            className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-medium transition-all"
-                          >
-                            Delete
+                            {u.isActive ? "Active" : "Inactive"}
                           </button>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        <p className="font-semibold text-gray-800">
+                          {u.firstName} {u.lastName ?? ""}
+                        </p>
+                        <p className="text-sm text-gray-600">{u.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-2 border-t border-gray-200">
+                      <button
+                        onClick={() => setViewUser(u)}
+                        className="flex-1 px-3 py-2 bg-white hover:bg-gray-100 text-gray-700 rounded-lg text-sm font-medium transition-all border border-gray-300"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => startEdit(u)}
+                        className="flex-1 px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-all"
+                      >
+                        Update
+                      </button>
+                      <button
+                        onClick={() => handleDelete(u)}
+                        className="flex-1 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium transition-all"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>
