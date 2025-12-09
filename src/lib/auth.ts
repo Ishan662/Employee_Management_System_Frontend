@@ -1,3 +1,5 @@
+import type { User } from "@/types/user";
+
 type SignupPayload = {
   email: string;
   firstName: string;
@@ -5,8 +7,12 @@ type SignupPayload = {
   password: string;
 };
 
+type AuthResponse = {
+  accessToken: string;
+  user: User;
+};
+
 export async function login(email: string, password: string) {
-  // Call Next.js API route (proxy to backend)
   const res = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -18,15 +24,17 @@ export async function login(email: string, password: string) {
     throw new Error(errorBody.message || "Login failed");
   }
 
-  const data = await res.json();
-  if (data?.token) {
-    localStorage.setItem("token", data.token);
+  const data = (await res.json()) as AuthResponse;
+  if (data?.accessToken) {
+    localStorage.setItem("accessToken", data.accessToken);
+  }
+  if (data?.user) {
+    localStorage.setItem("currentUser", JSON.stringify(data.user));
   }
   return data;
 }
 
 export async function signup(payload: SignupPayload) {
-  // Call Next.js API route (proxy to backend)
   const res = await fetch("/api/auth/signup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -38,13 +46,30 @@ export async function signup(payload: SignupPayload) {
     throw new Error(errorBody.message || "Signup failed");
   }
 
-  const data = await res.json();
-  if (data?.token) {
-    localStorage.setItem("token", data.token);
+  const data = (await res.json()) as AuthResponse;
+  if (data?.accessToken) {
+    localStorage.setItem("accessToken", data.accessToken);
+  }
+  if (data?.user) {
+    localStorage.setItem("currentUser", JSON.stringify(data.user));
   }
   return data;
 }
 
-export function logout() {
-  localStorage.removeItem("token");
+export function getCurrentUser(): User | null {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem("currentUser");
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as User;
+  } catch {
+    return null;
+  }
 }
+
+export function logout() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("currentUser");
+}
+
