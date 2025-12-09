@@ -5,7 +5,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
-    const res = await fetch(`${BACKEND_URL}/users`, {
+    const res = await fetch(`${BACKEND_URL}/employees`, {
       headers: authHeader ? { Authorization: authHeader } : undefined,
     });
     const data = await res.json().catch(() => ({}));
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     }
     return NextResponse.json(data);
   } catch {
-    return NextResponse.json({ message: 'Failed to fetch users' }, { status: 500 });
+    return NextResponse.json({ message: 'Failed to fetch employees' }, { status: 500 });
   }
 }
 
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const authHeader = request.headers.get('authorization');
-    const res = await fetch(`${BACKEND_URL}/users`, {
+    const res = await fetch(`${BACKEND_URL}/employees`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -36,6 +36,6 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json(data);
   } catch {
-    return NextResponse.json({ message: 'Failed to create user' }, { status: 500 });
+    return NextResponse.json({ message: 'Failed to create employee' }, { status: 500 });
   }
 }

@@ -8,7 +8,8 @@ type SignupPayload = {
 };
 
 type AuthResponse = {
-  accessToken: string;
+  accessToken?: string; // camelCase variant
+  access_token?: string; // snake_case variant from NestJS
   user: User;
 };
 
@@ -25,8 +26,9 @@ export async function login(email: string, password: string) {
   }
 
   const data = (await res.json()) as AuthResponse;
-  if (data?.accessToken) {
-    localStorage.setItem("accessToken", data.accessToken);
+  const token = data.accessToken ?? data.access_token;
+  if (token) {
+    localStorage.setItem("accessToken", token);
   }
   if (data?.user) {
     localStorage.setItem("currentUser", JSON.stringify(data.user));
@@ -47,8 +49,9 @@ export async function signup(payload: SignupPayload) {
   }
 
   const data = (await res.json()) as AuthResponse;
-  if (data?.accessToken) {
-    localStorage.setItem("accessToken", data.accessToken);
+  const token = data.accessToken ?? data.access_token;
+  if (token) {
+    localStorage.setItem("accessToken", token);
   }
   if (data?.user) {
     localStorage.setItem("currentUser", JSON.stringify(data.user));
