@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser, logout } from "@/lib/auth";
 import type { User } from "@/types/user";
-import { UserManagement } from "@/components/admin/UserManagement";
+import {UserManagement} from "@/components/admin/UserManagement";
+import EmployeeProfile from "@/components/employee/EmployeeProfile";
 
 type AdminStats = {
   totalUsers: number;
@@ -192,15 +193,12 @@ export default function DashboardPage() {
 
       {user.role.toUpperCase() === "EMPLOYEE" && (
         <section className="space-y-6">
-          <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-4xl">👤</span>
-              <h2 className="text-2xl font-bold text-gray-800">My Profile</h2>
-            </div>
-            <p className="text-gray-600 leading-relaxed">
-              Employees can view and update only their own profile.
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="w-1 h-8 bg-gradient-to-b from-blue-600 to-indigo-600 rounded-full"></div>
+            <h2 className="text-2xl font-bold text-gray-800">My Profile</h2>
           </div>
+          
+          <EmployeeProfile />
         </section>
       )}
       </div>
