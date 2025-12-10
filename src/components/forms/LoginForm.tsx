@@ -3,6 +3,7 @@
 import React from "react";
 import { Form, Input, Button, Card, message } from "antd";
 import { login } from "@/lib/auth";
+import Link from "next/link";
 
 export default function LoginForm() {
   const [loading, setLoading] = React.useState(false);
@@ -40,7 +41,16 @@ export default function LoginForm() {
         >
           Login
         </Button>
+
+        <div className="text-center mt-4">
+        <span className="text-gray-600">Don't have an account? </span>
+        <Link href="/signup" className="text-blue-600 hover:text-blue-800 font-medium">
+          Sign up
+        </Link>
+      </div>
       </Form>
+
+      
     </Card>
   );
 }

@@ -14,9 +14,10 @@ type CreateUserPayload = {
 type UserManagementProps = {
   title: string;
   roleFilter?: Exclude<UserRole, "ADMIN">; // we focus on MANAGER/EMPLOYEE views
+  isAdmin: boolean; // NEW: determines available actions
 };
 
-export function UserManagement({ title, roleFilter }: UserManagementProps) {
+export function UserManagement({ title, roleFilter, isAdmin }: UserManagementProps) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -443,16 +444,28 @@ export function UserManagement({ title, roleFilter }: UserManagementProps) {
                           </span>
                         </td>
                         <td className="py-3 pr-4">
-                          <button
-                            onClick={() => handleToggleActive(u)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                              u.isActive
-                                ? "bg-green-100 text-green-700 hover:bg-green-200"
-                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                            }`}
-                          >
-                            {u.isActive ? "Active" : "Inactive"}
-                          </button>
+                          {isAdmin ? (
+                            <button
+                              onClick={() => handleToggleActive(u)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                u.isActive
+                                  ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                              }`}
+                            >
+                              {u.isActive ? "Active" : "Inactive"}
+                            </button>
+                          ) : (
+                            <span
+                              className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                                u.isActive
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-gray-100 text-gray-700"
+                              }`}
+                            >
+                              {u.isActive ? "Active" : "Inactive"}
+                            </span>
+                          )}
                         </td>
                         <td className="py-3 pr-4">
                           <div className="flex gap-2">
@@ -462,18 +475,22 @@ export function UserManagement({ title, roleFilter }: UserManagementProps) {
                             >
                               View
                             </button>
-                            <button
-                              onClick={() => startEdit(u)}
-                              className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-xs font-medium transition-all"
-                            >
-                              Update
+                            {isAdmin && (
+                              <>
+                                <button
+                                  onClick={() => startEdit(u)}
+                                  className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-xs font-medium transition-all"
+                                >
+                                  Update
                             </button>
-                            <button
-                              onClick={() => handleDelete(u)}
-                              className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-medium transition-all"
-                            >
-                              Delete
-                            </button>
+                                <button
+                                  onClick={() => handleDelete(u)}
+                                  className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-medium transition-all"
+                                >
+                                  Delete
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -492,16 +509,28 @@ export function UserManagement({ title, roleFilter }: UserManagementProps) {
                           <span className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
                             {getRoleName(u)}
                           </span>
-                          <button
-                            onClick={() => handleToggleActive(u)}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                              u.isActive
-                                ? "bg-green-100 text-green-700"
-                                : "bg-gray-200 text-gray-700"
-                            }`}
-                          >
-                            {u.isActive ? "Active" : "Inactive"}
-                          </button>
+                          {isAdmin ? (
+                            <button
+                              onClick={() => handleToggleActive(u)}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                                u.isActive
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-gray-200 text-gray-700"
+                              }`}
+                            >
+                              {u.isActive ? "Active" : "Inactive"}
+                            </button>
+                          ) : (
+                            <span
+                              className={`px-2.5 py-1 rounded-lg text-xs font-medium ${
+                                u.isActive
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-gray-200 text-gray-700"
+                              }`}
+                            >
+                              {u.isActive ? "Active" : "Inactive"}
+                            </span>
+                          )}
                         </div>
                         <p className="font-semibold text-gray-800">
                           {u.firstName} {u.lastName ?? ""}
@@ -516,18 +545,22 @@ export function UserManagement({ title, roleFilter }: UserManagementProps) {
                       >
                         View
                       </button>
-                      <button
-                        onClick={() => startEdit(u)}
-                        className="flex-1 px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-all"
-                      >
-                        Update
-                      </button>
-                      <button
-                        onClick={() => handleDelete(u)}
-                        className="flex-1 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium transition-all"
-                      >
-                        Delete
-                      </button>
+                      {isAdmin && (
+                        <>
+                          <button
+                            onClick={() => startEdit(u)}
+                            className="flex-1 px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-all"
+                          >
+                            Update
+                          </button>
+                          <button
+                            onClick={() => handleDelete(u)}
+                            className="flex-1 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium transition-all"
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))}

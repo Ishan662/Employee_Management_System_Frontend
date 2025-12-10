@@ -170,26 +170,23 @@ export default function DashboardPage() {
             </div>
 
           {activeView === "managers" && (
-            <UserManagement title="Managers" roleFilter="Manager" />
+            <UserManagement title="Managers" roleFilter="Manager" isAdmin={true} />
           )}
 
           {activeView === "employees" && (
-            <UserManagement title="Employees" roleFilter="Employee" />
+            <UserManagement title="Employees" roleFilter="Employee" isAdmin={true} />
           )}
         </section>
       )}
 
       {user.role.toUpperCase() === "MANAGER" && (
         <section className="space-y-6">
-          <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-4xl">👔</span>
-              <h2 className="text-2xl font-bold text-gray-800">Manager Area</h2>
-            </div>
-            <p className="text-gray-600 leading-relaxed">
-              Managers can manage employees they are responsible for.
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="w-1 h-8 bg-gradient-to-b from-blue-600 to-indigo-600 rounded-full"></div>
+            <h2 className="text-2xl font-bold text-gray-800">Manager Dashboard</h2>
           </div>
+          
+          <UserManagement title="Employees" roleFilter="Employee" isAdmin={false} />
         </section>
       )}
 

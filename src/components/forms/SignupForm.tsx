@@ -3,6 +3,7 @@
 import { Form, Input, Button, Card, message } from "antd";
 import { signup } from "@/lib/auth";
 import { useState } from "react";
+import Link from "next/link";
 
 export default function SignupForm() {
   const [loading, setLoading] = useState(false);
@@ -91,6 +92,13 @@ export default function SignupForm() {
         >
           Sign Up
         </Button>
+
+        <div className="text-center mt-4">
+          <span className="text-gray-600">Already have an account? </span>
+            <Link href="/login" className="text-blue-600 hover:text-blue-800 font-medium">
+              Log in
+            </Link>
+        </div>
       </Form>
     </Card>
   );
