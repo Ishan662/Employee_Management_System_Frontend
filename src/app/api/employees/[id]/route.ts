@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
-type Params = { params: { id: string } };
-
-export async function GET(_req: NextRequest, { params }: Params) {
+export async function GET(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
+    const params = await context.params;
     const authHeader = _req.headers.get('authorization');
     const res = await fetch(`${BACKEND_URL}/employees/${params.id}`, {
       headers: authHeader ? { Authorization: authHeader } : undefined,
@@ -20,8 +19,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: Params) {
+export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
+    const params = await context.params;
     const body = await request.json();
     const authHeader = request.headers.get('authorization');
     const res = await fetch(`${BACKEND_URL}/employees/${params.id}`, {
@@ -42,8 +42,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: Params) {
+export async function DELETE(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
+    const params = await context.params;
     const authHeader = _req.headers.get('authorization');
     const res = await fetch(`${BACKEND_URL}/employees/${params.id}`, {
       method: 'DELETE',

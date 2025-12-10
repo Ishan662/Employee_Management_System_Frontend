@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { User, UserRole } from "@/types/user";
+import { usePermissions } from "@/lib/permissions";
+import { getCurrentUser } from "@/lib/auth";
 
 type AdminUser = User & {};
 
@@ -14,10 +16,24 @@ type CreateUserPayload = {
 type UserManagementProps = {
   title: string;
   roleFilter?: Exclude<UserRole, "ADMIN">; // we focus on MANAGER/EMPLOYEE views
-  isAdmin: boolean; // NEW: determines available actions
 };
 
-export function UserManagement({ title, roleFilter, isAdmin }: UserManagementProps) {
+export function UserManagement({ title, roleFilter }: UserManagementProps) {
+  // Use permission hook instead of isAdmin prop
+  const { hasPermission, permissions } = usePermissions();
+  
+  // Fallback: if no permissions exist, use role-based logic
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser?.role === "ADMIN" || 
+                  (typeof currentUser?.role === "object" && currentUser?.role?.name === "ADMIN");
+  
+  // Define what actions are available based on permissions
+  // If permissions exist, use them; otherwise fall back to role check
+  const canCreateUser = permissions.length > 0 ? hasPermission("CREATE_USER") : isAdmin;
+  const canUpdateUser = permissions.length > 0 ? hasPermission("UPDATE_USER") : isAdmin;
+  const canDeleteUser = permissions.length > 0 ? hasPermission("DELETE_USER") : isAdmin;
+  const canToggleUserStatus = permissions.length > 0 ? hasPermission("TOGGLE_USER_STATUS") : isAdmin;
+
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -109,14 +125,20 @@ export function UserManagement({ title, roleFilter, isAdmin }: UserManagementPro
       
       // Automatically determine roleName based on which section we're in
       // roleFilter is "MANAGER" or "EMPLOYEE"
-      const roleName = roleFilter || "Employee"; // Default to Employee if no filter
+      // Backend expects "Manager" or "Employee" (capitalized)
+      let roleName = "Employee"; // Default
+      if (roleFilter === "MANAGER") {
+        roleName = "Manager";
+      } else if (roleFilter === "EMPLOYEE") {
+        roleName = "Employee";
+      }
       
       const payload = {
         email: form.email,
         firstName: form.firstName,
         lastName: form.lastName || undefined,
         password: form.password,
-        roleName: roleName, // Automatically set based on context
+        roleName: roleName, // Capitalized format for backend
       };
       
       const res = await fetch("/api/users/by-role", {
@@ -444,7 +466,7 @@ export function UserManagement({ title, roleFilter, isAdmin }: UserManagementPro
                           </span>
                         </td>
                         <td className="py-3 pr-4">
-                          {isAdmin ? (
+                          {canToggleUserStatus ? (
                             <button
                               onClick={() => handleToggleActive(u)}
                               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
@@ -475,21 +497,21 @@ export function UserManagement({ title, roleFilter, isAdmin }: UserManagementPro
                             >
                               View
                             </button>
-                            {isAdmin && (
-                              <>
-                                <button
-                                  onClick={() => startEdit(u)}
-                                  className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-xs font-medium transition-all"
-                                >
-                                  Update
-                            </button>
-                                <button
-                                  onClick={() => handleDelete(u)}
-                                  className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-medium transition-all"
-                                >
-                                  Delete
-                                </button>
-                              </>
+                            {canUpdateUser && (
+                              <button
+                                onClick={() => startEdit(u)}
+                                className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-xs font-medium transition-all"
+                              >
+                                Update
+                              </button>
+                            )}
+                            {canDeleteUser && (
+                              <button
+                                onClick={() => handleDelete(u)}
+                                className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-medium transition-all"
+                              >
+                                Delete
+                              </button>
                             )}
                           </div>
                         </td>
@@ -509,7 +531,7 @@ export function UserManagement({ title, roleFilter, isAdmin }: UserManagementPro
                           <span className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
                             {getRoleName(u)}
                           </span>
-                          {isAdmin ? (
+                          {canToggleUserStatus ? (
                             <button
                               onClick={() => handleToggleActive(u)}
                               className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
@@ -545,21 +567,21 @@ export function UserManagement({ title, roleFilter, isAdmin }: UserManagementPro
                       >
                         View
                       </button>
-                      {isAdmin && (
-                        <>
-                          <button
-                            onClick={() => startEdit(u)}
-                            className="flex-1 px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-all"
-                          >
-                            Update
-                          </button>
-                          <button
-                            onClick={() => handleDelete(u)}
-                            className="flex-1 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium transition-all"
-                          >
-                            Delete
-                          </button>
-                        </>
+                      {canUpdateUser && (
+                        <button
+                          onClick={() => startEdit(u)}
+                          className="flex-1 px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-all"
+                        >
+                          Update
+                        </button>
+                      )}
+                      {canDeleteUser && (
+                        <button
+                          onClick={() => handleDelete(u)}
+                          className="flex-1 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium transition-all"
+                        >
+                          Delete
+                        </button>
                       )}
                     </div>
                   </div>

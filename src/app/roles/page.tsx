@@ -19,16 +19,20 @@ type Permission = {
 export default function RolesPage() {
   const router = useRouter();
   const [roles, setRoles] = useState<Role[]>([]);
+  const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [viewRole, setViewRole] = useState<Role | null>(null);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
+  const [editingPermissions, setEditingPermissions] = useState<Role | null>(null);
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [form, setForm] = useState({ name: "", description: "" });
   const [editForm, setEditForm] = useState({ name: "", description: "" });
 
   useEffect(() => {
     fetchRoles();
+    fetchPermissions();
   }, []);
 
   const fetchRoles = async () => {
@@ -44,6 +48,26 @@ export default function RolesPage() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPermissions = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const res = await fetch("/api/permissions", {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        console.log("Loaded permissions:", data);
+        setAllPermissions(data);
+      } else {
+        console.error("Failed to fetch permissions:", res.status);
+        // Continue without permissions, don't block UI
+      }
+    } catch (error) {
+      console.error("Failed to fetch permissions:", error);
+      // Continue without permissions, don't block UI
     }
   };
 
@@ -100,6 +124,56 @@ export default function RolesPage() {
     } catch (error) {
       alert("Failed to update role");
     }
+  };
+
+  const startEditPermissions = (role: Role) => {
+    setEditingPermissions(role);
+    // Set currently selected permissions - use name as fallback if id is missing
+    const currentPermissionIds = role.permissions?.map((p) => p.id || p.name).filter(Boolean) || [];
+    setSelectedPermissions(currentPermissionIds);
+    console.log("Starting permission edit for:", role.name);
+    console.log("Current permissions:", currentPermissionIds);
+  };
+
+  const handleUpdatePermissions = async () => {
+    if (!editingPermissions) return;
+    try {
+      const token = localStorage.getItem("accessToken");
+      const res = await fetch(`/api/roles/${editingPermissions.id}/permissions`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ permissionIds: selectedPermissions }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || "Failed to update permissions");
+        return;
+      }
+      const updated = await res.json();
+      setRoles((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+      setEditingPermissions(null);
+      setSelectedPermissions([]);
+    } catch (error) {
+      alert("Failed to update permissions");
+    }
+  };
+
+  const togglePermission = (permissionId: string) => {
+    if (!permissionId) {
+      console.error("Permission ID is undefined!");
+      return;
+    }
+    console.log("Toggling permission:", permissionId);
+    setSelectedPermissions((prev) => {
+      const newSelection = prev.includes(permissionId)
+        ? prev.filter((id) => id !== permissionId)
+        : [...prev, permissionId];
+      console.log("New selection:", newSelection);
+      return newSelection;
+    });
   };
 
   const handleDelete = async (role: Role) => {
@@ -287,9 +361,9 @@ export default function RolesPage() {
                     <span className="text-sm italic text-gray-400">No permissions assigned</span>
                   ) : (
                     <div className="flex flex-wrap gap-2">
-                      {viewRole.permissions.map((perm) => (
+                      {viewRole.permissions.map((perm, index) => (
                         <span
-                          key={perm.id}
+                          key={perm.id || perm.name || index}
                           className="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium"
                         >
                           {perm.name}
@@ -303,6 +377,82 @@ export default function RolesPage() {
                   className="w-full px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium"
                 >
                   Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Manage Permissions Modal */}
+        {editingPermissions && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+            <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+              <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-white">
+                  Manage Permissions - {editingPermissions.name}
+                </h3>
+                <button
+                  onClick={() => {
+                    setEditingPermissions(null);
+                    setSelectedPermissions([]);
+                  }}
+                  className="text-white/80 hover:text-white"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto flex-1">
+                <p className="text-sm text-gray-600 mb-4">
+                  Select the permissions to assign to this role. Users with this role will have access to all selected permissions.
+                </p>
+                {allPermissions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No permissions available</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {allPermissions.map((permission, index) => {
+                      const permId = permission.id || permission.name;
+                      return (
+                        <label
+                          key={permId || index}
+                          className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedPermissions.includes(permId)}
+                            onChange={() => togglePermission(permId)}
+                            className="mt-1 w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                          />
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-800">{permission.name}</p>
+                            {permission.description && (
+                              <p className="text-sm text-gray-500 mt-1">{permission.description}</p>
+                            )}
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex gap-3">
+                <button
+                  onClick={handleUpdatePermissions}
+                  className="flex-1 px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+                >
+                  Save Permissions ({selectedPermissions.length})
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingPermissions(null);
+                    setSelectedPermissions([]);
+                  }}
+                  className="flex-1 px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-100"
+                >
+                  Cancel
                 </button>
               </div>
             </div>
@@ -354,6 +504,12 @@ export default function RolesPage() {
                                 View
                               </button>
                               <button
+                                onClick={() => startEditPermissions(role)}
+                                className="px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg text-xs font-medium"
+                              >
+                                Permissions
+                              </button>
+                              <button
                                 onClick={() => startEdit(role)}
                                 className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-xs font-medium"
                               >
@@ -392,10 +548,16 @@ export default function RolesPage() {
                           View
                         </button>
                         <button
+                          onClick={() => startEditPermissions(role)}
+                          className="flex-1 px-3 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg text-sm font-medium"
+                        >
+                          Perms
+                        </button>
+                        <button
                           onClick={() => startEdit(role)}
                           className="flex-1 px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium"
                         >
-                          Update
+                          Edit
                         </button>
                         <button
                           onClick={() => handleDelete(role)}
