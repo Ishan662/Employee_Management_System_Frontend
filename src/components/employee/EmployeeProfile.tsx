@@ -24,7 +24,6 @@ export default function EmployeeProfile() {
         return;
       }
       
-      // Fetch current user's profile from /users/me endpoint
       const res = await fetch("/api/users/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -56,14 +55,12 @@ export default function EmployeeProfile() {
   const getPermissions = (user: any): string[] => {
     if (!user) return [];
     
-    // Check if permissions exist directly on user
     if (Array.isArray(user.permissions)) {
       return user.permissions.map((p: any) =>
         typeof p === "string" ? p : p.name || ""
       ).filter(Boolean);
     }
     
-    // Check if permissions exist on role
     if (user.role && Array.isArray(user.role.permissions)) {
       return user.role.permissions
         .map((p: any) => (typeof p === "string" ? p : p.name || ""))
@@ -126,7 +123,6 @@ export default function EmployeeProfile() {
         </div>
       </div>
 
-      {/* Profile Details Cards */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Personal Information Card */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
@@ -154,7 +150,6 @@ export default function EmployeeProfile() {
           </div>
         </div>
 
-        {/* Role & Permissions Card */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">

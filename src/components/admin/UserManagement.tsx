@@ -38,6 +38,7 @@ export function UserManagement({ title, roleFilter }: UserManagementProps) {
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [viewUser, setViewUser] = useState<AdminUser | null>(null);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [editForm, setEditForm] = useState<{
@@ -84,9 +85,22 @@ export function UserManagement({ title, roleFilter }: UserManagementProps) {
     return "";
   };
 
-  const visibleUsers = roleFilter
+  // Filter by role
+  const filteredByRole = roleFilter
     ? users.filter((u) => getRoleName(u) === roleFilter.toUpperCase())
     : users;
+
+  // Then filter by search query
+  const visibleUsers = filteredByRole.filter((u) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      u.email.toLowerCase().includes(query) ||
+      u.firstName.toLowerCase().includes(query) ||
+      (u.lastName && u.lastName.toLowerCase().includes(query)) ||
+      getRoleName(u).toLowerCase().includes(query)
+    );
+  });
 
   const getUserId = (u: AdminUser): string | null => {
     const anyUser: any = u as any;
@@ -123,10 +137,7 @@ export function UserManagement({ title, roleFilter }: UserManagementProps) {
           ? localStorage.getItem("accessToken")
           : null;
       
-      // Automatically determine roleName based on which section we're in
-      // roleFilter is "MANAGER" or "EMPLOYEE"
-      // Backend expects "Manager" or "Employee" (capitalized)
-      let roleName = "Employee"; // Default
+      let roleName = "Employee"; 
       if (roleFilter === "MANAGER") {
         roleName = "Manager";
       } else if (roleFilter === "EMPLOYEE") {
@@ -271,7 +282,6 @@ export function UserManagement({ title, roleFilter }: UserManagementProps) {
 
   return (
     <section className="space-y-6 mt-6">
-      {/* Header with Create Button */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-1 h-8 bg-gradient-to-b from-blue-600 to-indigo-600 rounded-full"></div>
@@ -288,7 +298,6 @@ export function UserManagement({ title, roleFilter }: UserManagementProps) {
         </button>
       </div>
 
-      {/* Create Form - Shown when button clicked */}
       {showCreateForm && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 space-y-4 animate-in fade-in duration-200">
           <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -344,7 +353,6 @@ export function UserManagement({ title, roleFilter }: UserManagementProps) {
         </div>
       )}
 
-      {/* Edit Form - Modal */}
       {editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
           <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden animate-in zoom-in duration-200">
@@ -422,7 +430,6 @@ export function UserManagement({ title, roleFilter }: UserManagementProps) {
         </div>
       )}
 
-      {/* Users List */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
           <h3 className="font-semibold text-gray-800 flex items-center gap-2">
@@ -430,6 +437,34 @@ export function UserManagement({ title, roleFilter }: UserManagementProps) {
           </h3>
         </div>
         <div className="p-6">
+          {/* Search Box */}
+          <div className="mb-6">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by email, name, or role..."
+                className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+
           {loading ? (
             <div className="text-center py-8">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -441,7 +476,6 @@ export function UserManagement({ title, roleFilter }: UserManagementProps) {
             </div>
           ) : (
             <>
-              {/* Desktop Table View */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="min-w-full">
                   <thead>
@@ -521,7 +555,6 @@ export function UserManagement({ title, roleFilter }: UserManagementProps) {
                 </table>
               </div>
 
-              {/* Mobile Card View */}
               <div className="md:hidden space-y-4">
                 {visibleUsers.map((u) => (
                   <div key={u.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-3">
@@ -592,7 +625,6 @@ export function UserManagement({ title, roleFilter }: UserManagementProps) {
         </div>
       </div>
 
-      {/* View User Modal */}
       {viewUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden animate-in zoom-in duration-200">

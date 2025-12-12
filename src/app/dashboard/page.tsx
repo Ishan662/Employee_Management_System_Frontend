@@ -77,7 +77,6 @@ export default function DashboardPage() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                <span className="text-4xl">📊</span>
                 Dashboard
               </h1>
               <p className="mt-2 text-blue-100">
@@ -176,7 +175,6 @@ export default function DashboardPage() {
                 </div>
               </button>
 
-              {/* NEW: Manage Roles & Permissions Card */}
               <button
                 type="button"
                 onClick={() => router.push("/roles")}
@@ -186,9 +184,7 @@ export default function DashboardPage() {
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-sm font-semibold text-orange-100 uppercase tracking-wide">Roles & Permissions</p>
-                    <svg className="w-8 h-8 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
+                    
                   </div>
                   <p className="text-3xl font-bold text-white mb-2">
                     Manage Access

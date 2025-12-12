@@ -8,8 +8,8 @@ type SignupPayload = {
 };
 
 type AuthResponse = {
-  accessToken?: string; // camelCase variant
-  access_token?: string; // snake_case variant from NestJS
+  accessToken?: string; 
+  access_token?: string; 
   user: User;
 };
 
